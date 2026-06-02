@@ -39,3 +39,6 @@ coverage/
 .DS_Store
 Thumbs.db
 *.swp
+
+# --- Claude Code (config local) ---
+.claude/settings.local.json
