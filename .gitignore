@@ -1,0 +1,41 @@
+# --- Gentle-AI ---
+# Metadatos del agente generados por usuario (no compartir)
+.atl/
+.pi/
+.pi-lens/
+
+# Engram: la DB local se ignora, pero los chunks de sync SÍ se versionan
+.engram/engram.db
+.engram/cloud.json
+
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+*.local
+
+# --- Entorno y secretos ---
+.env
+.env.*
+!.env.example
+
+# --- Editores / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
