@@ -83,6 +83,18 @@ interfaz en React. El objetivo no es el producto en sí, sino ejercitar el ciclo
 - `desa/<Nombre>/<descripcion>` → rama hija, **una por spec/cambio SDD**. Se crea
   **desde la rama personal padre**.
 
+### Quién hace qué con las ramas
+
+- **El agente crea y cambia de rama hija.** Al iniciar un `/sdd-new`, el agente crea
+  la rama hija `desa/<Nombre>/<descripcion>` **desde la rama personal activa**
+  (`desa/<Nombre>`), pidiendo confirmación antes de hacerlo. Si no está situado en la
+  rama personal correcta, debe cambiar a ella primero, nunca crear la hija desde
+  `desarrollo-testing` directamente.
+- **El agente NUNCA hace merge ni push a `desarrollo-testing`.** La integración hacia
+  arriba (hija → personal → `desarrollo-testing`) la realiza siempre la persona.
+- La persona es responsable de que exista su rama personal `desa/<Nombre>` (creada
+  desde `desarrollo-testing`) antes de pedir al agente el primer `/sdd-new`.
+
 ### Reglas
 
 - Toda rama nueva sale de su base correcta: las personales de `desarrollo-testing`,
@@ -148,5 +160,6 @@ Cada rama hija usa un **nombre de cambio SDD distinto** (`crear-api-tareas`,
 - No introducir dependencias nuevas (bases de datos, librerías de estado, ORMs)
   sin que una spec aprobada lo requiera.
 - Preferir soluciones simples y bien testeadas sobre abstracciones prematuras.
-- El agente no realiza merges ni pushes a `desarrollo-testing`: prepara la rama y
-  deja la integración a la persona.
+- El agente **puede crear y cambiar de rama hija** (`desa/<Nombre>/<descripcion>`)
+  desde la rama personal activa, pidiendo confirmación. El agente **no realiza merges
+  ni pushes a `desarrollo-testing`**: deja la integración a la persona.
