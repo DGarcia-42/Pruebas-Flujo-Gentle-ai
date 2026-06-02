@@ -1,6 +1,6 @@
 """
 Tests de API para el endpoint de tareas.
-Cubre escenarios L-1..L-3, C-1..C-8 de la spec crear-api-tareas.
+Cubre escenarios L-1..L-3, C-1..C-8, G-1..G-3, U-1..U-8, D-1..D-5 de la spec crear-api-tareas.
 """
 import uuid
 
@@ -116,3 +116,195 @@ def test_created_task_appears_in_list(client: TestClient) -> None:
     assert tasks[0]["title"] == "Tarea visible"
     assert tasks[0]["status"] == "pending"
     assert tasks[0]["priority"] == "medium"
+
+
+# ─── Fase 5.2: GET /api/tasks/{id} (G-1..G-3) ────────────────────────────────
+
+def test_get_task_by_id_returns_200(client: TestClient) -> None:
+    """G-1: POST para crear; GET /api/tasks/{id} → 200 con TaskRead completo."""
+    create_resp = client.post("/api/tasks", json={"title": "Tarea para obtener"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.get(f"/api/tasks/{task_id}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == task_id
+
+
+def test_get_task_by_id_body_matches_created(client: TestClient) -> None:
+    """G-2: El id en URL coincide con id en body; title y priority coinciden."""
+    payload = {"title": "Tarea G-2", "priority": "high"}
+    create_resp = client.post("/api/tasks", json=payload)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    task_id = created["id"]
+
+    response = client.get(f"/api/tasks/{task_id}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == task_id
+    assert body["title"] == "Tarea G-2"
+    assert body["priority"] == "high"
+
+
+def test_get_task_nonexistent_returns_404(client: TestClient) -> None:
+    """G-3: GET /api/tasks/{uuid_inexistente} → 404 con detail."""
+    random_id = str(uuid.uuid4())
+    response = client.get(f"/api/tasks/{random_id}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
+# ─── Fase 5.3: PUT /api/tasks/{id} (U-1..U-8) ────────────────────────────────
+
+def test_put_task_updates_title(client: TestClient) -> None:
+    """U-1: POST + PUT {"title": "Actualizado"} → 200, title cambiado, status intacto."""
+    create_resp = client.post("/api/tasks", json={"title": "Original", "status": "pending"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"title": "Actualizado"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "Actualizado"
+    assert body["status"] == "pending"
+
+
+def test_put_task_updates_status_and_priority(client: TestClient) -> None:
+    """U-2: PUT {"status": "done", "priority": "high"} → 200, ambos campos actualizados."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"status": "done", "priority": "high"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "done"
+    assert body["priority"] == "high"
+    assert body["title"] == "T"
+
+
+def test_put_task_empty_body_returns_200(client: TestClient) -> None:
+    """U-3: PUT {} → 200, datos conservados."""
+    create_resp = client.post("/api/tasks", json={"title": "Original"})
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    task_id = created["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "Original"
+    assert body["status"] == "pending"
+    assert body["priority"] == "medium"
+
+
+def test_put_task_nonexistent_returns_404(client: TestClient) -> None:
+    """U-4: PUT /api/tasks/{uuid_inexistente} → 404."""
+    random_id = str(uuid.uuid4())
+    response = client.put(f"/api/tasks/{random_id}", json={"title": "X"})
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
+def test_put_task_empty_title_returns_422(client: TestClient) -> None:
+    """U-5: PUT {"title": ""} → 422."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"title": ""})
+    assert response.status_code == 422
+
+
+def test_put_task_invalid_status_returns_422(client: TestClient) -> None:
+    """U-6: PUT {"status": "cancelado"} → 422."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"status": "cancelado"})
+    assert response.status_code == 422
+
+
+def test_put_task_invalid_priority_returns_422(client: TestClient) -> None:
+    """U-7: PUT {"priority": "critica"} → 422."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"priority": "critica"})
+    assert response.status_code == 422
+
+
+def test_put_task_created_at_immutable(client: TestClient) -> None:
+    """U-8: created_at en respuesta PUT igual al de POST (inmutable)."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    task_id = created["id"]
+    original_created_at = created["created_at"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"title": "Nuevo"})
+    assert response.status_code == 200
+    assert response.json()["created_at"] == original_created_at
+
+
+# ─── Fase 5.4: DELETE /api/tasks/{id} (D-1..D-5) ─────────────────────────────
+
+def test_delete_task_returns_204(client: TestClient) -> None:
+    """D-1: POST + DELETE → 204, cuerpo vacío."""
+    create_resp = client.post("/api/tasks", json={"title": "A eliminar"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.delete(f"/api/tasks/{task_id}")
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_delete_nonexistent_returns_404(client: TestClient) -> None:
+    """D-2: DELETE /api/tasks/{uuid_inexistente} → 404."""
+    random_id = str(uuid.uuid4())
+    response = client.delete(f"/api/tasks/{random_id}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
+def test_delete_task_removed_from_list(client: TestClient) -> None:
+    """D-3: POST + DELETE + GET /api/tasks → array sin la tarea eliminada."""
+    create_resp = client.post("/api/tasks", json={"title": "Eliminar de lista"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    client.delete(f"/api/tasks/{task_id}")
+
+    list_resp = client.get("/api/tasks")
+    assert list_resp.status_code == 200
+    tasks = list_resp.json()
+    assert all(t["id"] != task_id for t in tasks)
+
+
+def test_delete_task_get_by_id_returns_404(client: TestClient) -> None:
+    """D-4: POST + DELETE + GET /api/tasks/{id} → 404."""
+    create_resp = client.post("/api/tasks", json={"title": "Eliminar por id"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    client.delete(f"/api/tasks/{task_id}")
+
+    response = client.get(f"/api/tasks/{task_id}")
+    assert response.status_code == 404
+
+
+def test_delete_task_second_delete_returns_404(client: TestClient) -> None:
+    """D-5: POST + DELETE + DELETE (segundo) → 404."""
+    create_resp = client.post("/api/tasks", json={"title": "Doble eliminar"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    client.delete(f"/api/tasks/{task_id}")
+
+    response = client.delete(f"/api/tasks/{task_id}")
+    assert response.status_code == 404

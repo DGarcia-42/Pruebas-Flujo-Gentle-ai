@@ -3,7 +3,8 @@ Tests unitarios del servicio de tareas.
 Cubre: R-MOD-05, R-MOD-06, R-CREATE-07, R-CREATE-08, ADR-4, ADR-5, ADR-6.
 """
 import uuid
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import pytest
 
@@ -74,10 +75,18 @@ class TestTaskServiceUpdate:
         assert updated.title == "Nuevo"
 
     def test_update_refreshes_updated_at(self, service: TaskService) -> None:
-        """update → updated_at >= created_at (R-MOD-06)."""
+        """update → updated_at es estrictamente mayor que created_at (R-MOD-06).
+
+        Usa un timestamp controlado para la actualización (T+1s) para evitar
+        resolución de microsegundos que haría la aserción vacuamente verdadera.
+        """
         created = service.create(TaskCreate(title="T"))
-        updated = service.update(str(created.id), TaskUpdate(title="X"))
-        assert updated.updated_at >= created.created_at
+        future_time = created.created_at + timedelta(seconds=1)
+        with patch("app.services.task_service.datetime") as mock_dt:
+            mock_dt.now.return_value = future_time
+            updated = service.update(str(created.id), TaskUpdate(title="X"))
+        assert updated.updated_at > created.created_at
+        assert updated.updated_at == future_time
 
     def test_update_keeps_created_at_immutable(self, service: TaskService) -> None:
         """created_at no cambia tras update (R-MOD-05)."""
@@ -86,10 +95,17 @@ class TestTaskServiceUpdate:
         assert updated.created_at == created.created_at
 
     def test_update_empty_body_refreshes_updated_at(self, service: TaskService) -> None:
-        """update con TaskUpdate() → updated_at se actualiza aunque no cambien datos."""
+        """update con TaskUpdate() → updated_at se actualiza aunque no cambien datos.
+
+        Usa timestamp controlado (T+1s) para aserción estrictamente mayor (no vacuamente true).
+        """
         created = service.create(TaskCreate(title="T"))
-        updated = service.update(str(created.id), TaskUpdate())
-        assert updated.updated_at >= created.updated_at
+        future_time = created.created_at + timedelta(seconds=1)
+        with patch("app.services.task_service.datetime") as mock_dt:
+            mock_dt.now.return_value = future_time
+            updated = service.update(str(created.id), TaskUpdate())
+        assert updated.updated_at > created.updated_at
+        assert updated.updated_at == future_time
         # Campos de datos conservados
         assert updated.title == created.title
         assert updated.status == created.status
