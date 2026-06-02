@@ -8,6 +8,15 @@ interfaz en React. El objetivo no es el producto en sí, sino ejercitar el ciclo
 `/sdd-new → explore → propose → spec → design → tasks → /sdd-apply → /sdd-verify →
 /sdd-archive` sobre features reales.
 
+## Idioma del proyecto
+
+- **Toda la documentación en español de España** (README, guías, specs redactadas
+  a mano, comentarios explicativos).
+- **Los mensajes de commit en español de España**, con la descripción en español.
+- Los identificadores de código siguen las convenciones de cada lenguaje
+  (ver sección Convenciones de código); el idioma español aplica a documentación
+  y comunicación, no a los nombres de variables/funciones.
+
 ## Stack
 
 ### Backend
@@ -51,7 +60,6 @@ interfaz en React. El objetivo no es el producto en sí, sino ejercitar el ciclo
 - **Frontend**: componentes funcionales con hooks. Estado local salvo necesidad
   real de estado global.
 - **Nombres**: `snake_case` en Python, `camelCase`/`PascalCase` en TS.
-- **Commits**: formato convencional (`feat:`, `fix:`, `chore:`, `test:`...).
 
 ## Reglas de testing (TDD)
 
@@ -61,6 +69,53 @@ interfaz en React. El objetivo no es el producto en sí, sino ejercitar el ciclo
   para los endpoints.
 - Frontend: tests con Vitest + Testing Library en `frontend/src/**/*.test.tsx`.
 - Una feature no se da por terminada en `/sdd-verify` si sus tests no pasan.
+
+## Flujo de git (obligatorio)
+
+### Ramas
+
+- `main` → rama estable. **Nunca se mergea nada directamente a `main`.**
+- `desarrollo-testing` → **rama de integración**. Es la base de la que sale todo y
+  donde se integran las features. Contiene el `AGENTS.md` y el esqueleto de SDD
+  (`openspec/config.yaml`).
+- `desa/<Nombre>` → rama personal de cada persona (p. ej. `desa/Carlos`,
+  `desa/Diego`). Se crea **desde `desarrollo-testing`**.
+- `desa/<Nombre>/<descripcion>` → rama hija, **una por spec/cambio SDD**. Se crea
+  **desde la rama personal padre**.
+
+### Reglas
+
+- Toda rama nueva sale de su base correcta: las personales de `desarrollo-testing`,
+  las hijas de su rama personal. Así heredan `AGENTS.md` y `openspec/config.yaml`.
+- **Una rama hija = un `/sdd-new` = un nombre de cambio SDD distinto.** Nunca dos
+  personas usan el mismo nombre de cambio (evita conflictos en `openspec/changes/`).
+- Tras `/sdd-verify` con los tests en verde, la rama hija se integra hacia arriba.
+- **El merge a `desarrollo-testing` lo hacen las personas, no el agente**, de uno
+  en uno y siempre con `git pull` previo de `desarrollo-testing` para resolver
+  conflictos localmente.
+- Sincronizar las ramas personales con `desarrollo-testing` con frecuencia (no solo
+  al final) para que los merges no se acumulen.
+
+### `/sdd-init` (importante)
+
+- `/sdd-init` se ejecuta **una sola vez, sobre `desarrollo-testing`**, y su esqueleto
+  de OpenSpec (`openspec/config.yaml`) se commitea allí.
+- **No re-ejecutar `/sdd-init` en las ramas personales ni en las hijas**: heredan el
+  `config.yaml` por git. Regenerarlo en cada rama provocaría conflictos en ese archivo.
+- `/skill-registry` sí es local (`.atl/`, en `.gitignore`): se corre una vez por clon
+  (o lo gestiona el hook de arranque), es independiente de la rama.
+
+## Reglas de commits
+
+- **Mensajes en español de España**, formato convencional con descripción en español.
+  Ejemplos:
+  - `feat: añade endpoint de creación de tareas`
+  - `fix: corrige validación de prioridad vacía`
+  - `test: cubre el listado de tareas`
+  - `docs: actualiza la guía de instalación`
+- **Prohibido incluir a Claude (o cualquier agente de IA) como co-autor.** Los commits
+  no deben contener ningún trailer `Co-authored-by:` que mencione a Claude, ni firmas
+  generadas por la IA. El autor del commit es siempre la persona.
 
 ## Endpoints previstos (alcance de la prueba)
 
@@ -77,12 +132,14 @@ fase `spec` de SDD, no este documento.
 
 ## Reparto de trabajo (para la prueba en paralelo)
 
-- **Persona A** → feature de tareas. Rama `feat/api-tareas`, cambio SDD
-  `crear-api-tareas`. Cubre backend `/api/tasks` + UI de lista/creación.
-- **Persona B** → feature de autenticación. Rama `feat/autenticacion`, cambio SDD
-  `agregar-autenticacion`. Cubre backend `/api/auth` + pantallas de login/registro.
+- **Carlos** → rama personal `desa/Carlos`. Feature de tareas: backend `/api/tasks`
+  + UI de lista/creación. Ramas hijas por spec (p. ej. `desa/Carlos/tareas-crud`).
+- **Diego** → rama personal `desa/Diego`. Feature de autenticación: backend
+  `/api/auth` + pantallas de login/registro. Ramas hijas por spec
+  (p. ej. `desa/Diego/auth-login`).
 
-Usar **nombres de cambio SDD distintos** para evitar conflictos en `openspec/changes/`.
+Cada rama hija usa un **nombre de cambio SDD distinto** (`crear-api-tareas`,
+`agregar-autenticacion`, etc.).
 
 ## Notas para el agente
 
@@ -91,3 +148,5 @@ Usar **nombres de cambio SDD distintos** para evitar conflictos en `openspec/cha
 - No introducir dependencias nuevas (bases de datos, librerías de estado, ORMs)
   sin que una spec aprobada lo requiera.
 - Preferir soluciones simples y bien testeadas sobre abstracciones prematuras.
+- El agente no realiza merges ni pushes a `desarrollo-testing`: prepara la rama y
+  deja la integración a la persona.
