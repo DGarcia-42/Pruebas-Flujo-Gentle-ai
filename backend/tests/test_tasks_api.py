@@ -251,6 +251,21 @@ def test_put_task_created_at_immutable(client: TestClient) -> None:
     assert response.json()["created_at"] == original_created_at
 
 
+def test_put_task_id_in_body_is_ignored(client: TestClient) -> None:
+    """R-UPDATE-09: un id en el cuerpo del PUT se ignora; el id de la ruta manda."""
+    create_resp = client.post("/api/tasks", json={"title": "Original"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+    otro_id = str(uuid.uuid4())
+
+    response = client.put(f"/api/tasks/{task_id}", json={"title": "Nuevo", "id": otro_id})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == task_id  # el id del body se descarta: la tarea conserva el suyo
+    assert body["id"] != otro_id
+    assert body["title"] == "Nuevo"
+
+
 # ─── Fase 5.4: DELETE /api/tasks/{id} (D-1..D-5) ─────────────────────────────
 
 def test_delete_task_returns_204(client: TestClient) -> None:
