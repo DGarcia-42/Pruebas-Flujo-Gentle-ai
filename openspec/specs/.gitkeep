@@ -1,0 +1,2 @@
+# Main specs (source of truth) live here, one folder per domain: specs/{domain}/spec.md
+# Populated by sdd-archive when a change is closed. Keep this file so git tracks the empty dir.

@@ -1,0 +1,69 @@
+# openspec/config.yaml
+# SDD skeleton for Pruebas-Flujo-Gentle-ai.
+# Committed once on `desarrollo-testing`; child branches inherit it via git.
+# Do NOT regenerate this file on personal/child branches (avoids merge conflicts).
+schema: spec-driven
+
+context: |
+  Project: Pruebas-Flujo-Gentle-ai — a task-tracker used to exercise the
+  Gentle-AI workflow (SDD + Engram + skills) with two people working in
+  parallel on the same repository. AGENTS.md is the source of truth for stack
+  and conventions.
+
+  Tech stack:
+    Backend  — Python 3.12+, FastAPI, Pydantic v2, Uvicorn. Dependency
+               management with uv (pip + venv fallback). In-memory persistence
+               for now; SQLite/SQLModel is future work, not to be implemented
+               until a spec requires it.
+    Frontend — React 18 + TypeScript (strict), Vite bundler/dev server, native
+               fetch for API calls (no data-fetching library unless a spec
+               justifies it).
+
+  Architecture:
+    Backend layered as routers/ (HTTP) -> services/ (logic) -> repositories/
+    (data); routers never touch repositories directly. All request/response
+    models are Pydantic (no loose dicts in public signatures). API served under
+    the /api prefix.
+    Frontend: functional components with hooks; local state unless global state
+    is genuinely needed.
+
+  Testing:
+    Backend  — pytest in backend/tests/, FastAPI TestClient for endpoints.
+    Frontend — Vitest + React Testing Library in frontend/src/**/*.test.tsx.
+    Strict TDD: test first, implementation after. A feature is not done at
+    verify if its tests do not pass.
+
+  Style & language:
+    Documentation and commit messages in Spanish (Spain). Code identifiers
+    follow each language's conventions: snake_case in Python, camelCase/
+    PascalCase in TypeScript. Type hints mandatory in Python; TS strict on.
+    Conventional commits in Spanish; never add AI co-author trailers.
+
+rules:
+  proposal:
+    - Include a rollback plan for risky changes
+    - Do not introduce new dependencies (databases, state libraries, ORMs) without an approved spec
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Document architecture decisions with rationale
+    - Respect the routers -> services -> repositories layering
+    - Model all request/response payloads with Pydantic
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Every task starts with a failing test (RED) before implementation
+  apply:
+    - Follow existing code patterns
+    - Prefer simple, well-tested solutions over premature abstraction
+    tdd: true            # Strict TDD: RED-GREEN-REFACTOR, enforced
+    strict_tdd: true
+    test_command: "pytest"                 # backend; frontend uses: vitest
+  verify:
+    test_command: "pytest"                 # backend; frontend uses: vitest run
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - The archive is an audit trail — never modify archived changes
