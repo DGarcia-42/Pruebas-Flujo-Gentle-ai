@@ -1,0 +1,20 @@
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+from app.exceptions import TaskNotFoundError
+from app.routers import tasks as tasks_router
+
+
+def create_app() -> FastAPI:
+    application = FastAPI(title="Tareas API", version="0.1.0")
+
+    @application.exception_handler(TaskNotFoundError)
+    async def task_not_found_handler(request, exc: TaskNotFoundError) -> JSONResponse:
+        return JSONResponse(status_code=404, content={"detail": "Task not found"})
+
+    application.include_router(tasks_router.router, prefix="/api")
+
+    return application
+
+
+app = create_app()
