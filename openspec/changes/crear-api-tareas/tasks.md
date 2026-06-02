@@ -13,7 +13,7 @@ requiere que la anterior esté en verde).
 > Esta es la única fase donde se ensambla el esqueleto antes de que los tests puedan correr.  
 > Al final de la fase 0, `pytest` DEBE poder descubrir y ejecutar tests (aunque fallen).
 
-- [ ] **0.1 — Crear `backend/pyproject.toml`**  
+- [x] **0.1 — Crear `backend/pyproject.toml`**  
   Crear el fichero de proyecto con:  
   - `[project]` dependencies: `fastapi`, `uvicorn`, `pydantic` (Python `>=3.12`).  
   - `[project.optional-dependencies]` dev: `pytest`, `httpx`.  
@@ -21,7 +21,7 @@ requiere que la anterior esté en verde).
   - Verificar: `pip install -e ".[dev]"` (o `uv pip install`) sin errores.  
   Sin tests previos posibles aquí (es infraestructura pura). Prerequisito de todo lo demás.
 
-- [ ] **0.2 — Crear árbol de paquetes**  
+- [x] **0.2 — Crear árbol de paquetes**  
   Crear directorios y `__init__.py` vacíos:  
   ```
   backend/app/__init__.py
@@ -33,12 +33,12 @@ requiere que la anterior esté en verde).
   ```  
   Verificar: Python puede importar `app` sin errores.
 
-- [ ] **0.3 — Crear `app/exceptions.py`**  
+- [x] **0.3 — Crear `app/exceptions.py`**  
   Definir `TaskNotFoundError(Exception)`.  
   Sin tests previos posibles aquí (es definición pura sin comportamiento).  
   Necesario en 0.4 (main.py necesita importarlo).
 
-- [ ] **0.4 — Crear `app/main.py` con `create_app()` (esqueleto)**  
+- [x] **0.4 — Crear `app/main.py` con `create_app()` (esqueleto)**  
   Crear la función `create_app()` que:  
   - Instancia `FastAPI()`.  
   - Registra `@app.exception_handler(TaskNotFoundError)` → `JSONResponse(404, {"detail": "Task not found"})`.  
@@ -47,7 +47,7 @@ requiere que la anterior esté en verde).
   devuelve la app con el handler registrado.  
   Sin tests previos posibles aquí (el router aún no existe).
 
-- [ ] **0.5 — Crear `tests/conftest.py` con fixture `client`**  
+- [x] **0.5 — Crear `tests/conftest.py` con fixture `client`**  
   Implementar:  
   ```python
   @pytest.fixture
@@ -61,7 +61,7 @@ requiere que la anterior esté en verde).
   Nota: `get_task_repository` y `TaskRepository` aún no existen; la fixture fallará al  
   importar hasta la fase 2. Esto es esperado: el import-error es el RED de la fase 1.
 
-- [ ] **0.6 — Crear smoke test RED + verificar que `pytest` arranca**  
+- [x] **0.6 — Crear smoke test RED + verificar que `pytest` arranca**  
   En `tests/test_tasks_api.py`, escribir:  
   ```python
   def test_get_tasks_returns_empty_list(client):
@@ -80,7 +80,7 @@ requiere que la anterior esté en verde).
 > Objetivo: `TaskCreate`, `TaskUpdate`, `TaskRead`, `TaskStatus`, `TaskPriority` definidos y  
 > validados. Ningún endpoint funciona aún, pero los schemas se pueden importar y probar.
 
-- [ ] **1.1 — RED: tests de validación de `TaskCreate`**  
+- [x] **1.1 — RED: tests de validación de `TaskCreate`**  
   En `tests/test_tasks_api.py` (o un fichero `tests/test_schemas.py` separado),  
   escribir tests que importen directamente `TaskCreate`, `TaskStatus`, `TaskPriority`  
   y validen su comportamiento:  
@@ -93,7 +93,7 @@ requiere que la anterior esté en verde).
   Ejecutar: todos deben fallar con ImportError (los schemas no existen).  
   Spec: **R-MOD-02, R-MOD-03, R-MOD-04**, **R-CREATE-03, R-CREATE-04, R-CREATE-05, R-CREATE-06**.
 
-- [ ] **1.2 — GREEN: implementar `app/schemas/task.py`**  
+- [x] **1.2 — GREEN: implementar `app/schemas/task.py`**  
   Definir:  
   - `TaskStatus(str, Enum)`: `pending`, `in_progress`, `done`.  
   - `TaskPriority(str, Enum)`: `low`, `medium`, `high`.  
@@ -107,7 +107,7 @@ requiere que la anterior esté en verde).
   Ejecutar pytest: los tests de 1.1 deben pasar (GREEN).  
   ADR relevante: ADR-1 (TaskRead como representación interna), ADR-6 (exclude_unset).
 
-- [ ] **1.3 — RED: tests de validación de `TaskUpdate`**  
+- [x] **1.3 — RED: tests de validación de `TaskUpdate`**  
   Añadir tests para `TaskUpdate`:  
   - `TaskUpdate()` → objeto válido (todos None/unset).  
   - `TaskUpdate(title="")` → lanza `ValidationError`.  
@@ -124,7 +124,7 @@ requiere que la anterior esté en verde).
 
 > Objetivo: `TaskRepository` con CRUD in-memory funcional y testeable sin HTTP.
 
-- [ ] **2.1 — RED: tests del repositorio**  
+- [x] **2.1 — RED: tests del repositorio**  
   Crear `tests/test_repository.py` (opcional) o añadir directamente en `test_tasks_api.py`.  
   Tests unitarios del repositorio (sin TestClient):  
   - `repo.get_all()` sobre repo vacío → `[]`.  
@@ -138,7 +138,7 @@ requiere que la anterior esté en verde).
   Ejecutar: ImportError (repositorio no existe).  
   ADR relevante: ADR-2 (singleton, `self._items`), ADR-4 (devuelve None, no lanza).
 
-- [ ] **2.2 — GREEN: implementar `app/repositories/task_repository.py`**  
+- [x] **2.2 — GREEN: implementar `app/repositories/task_repository.py`**  
   Definir `TaskRepository`:  
   - `self._items: dict[str, TaskRead] = {}`.  
   - `get_all() -> list[TaskRead]`.  
@@ -156,7 +156,7 @@ requiere que la anterior esté en verde).
 > Objetivo: `TaskService` con lógica de negocio (UUID, timestamps UTC, `TaskNotFoundError`),  
 > testeable sin HTTP.
 
-- [ ] **3.1 — RED: tests del servicio**  
+- [x] **3.1 — RED: tests del servicio**  
   Tests unitarios del servicio (sin TestClient, usando `TaskRepository()` fresco):  
   - `service.create(TaskCreate(title="T"))` → devuelve `TaskRead` con `id` UUID4,  
     `created_at == updated_at`, `status="pending"`, `priority="medium"`.  
@@ -175,7 +175,7 @@ requiere que la anterior esté en verde).
   Spec: **R-MOD-05, R-MOD-06, R-CREATE-07, R-CREATE-08**, escenarios **C-8, U-3, U-8**.  
   ADR relevante: ADR-4 (lanza TaskNotFoundError), ADR-5 (timestamps UTC), ADR-6 (exclude_unset).
 
-- [ ] **3.2 — GREEN: implementar `app/services/task_service.py`**  
+- [x] **3.2 — GREEN: implementar `app/services/task_service.py`**  
   Definir `TaskService`:  
   - `__init__(self, repo: TaskRepository)`.  
   - `create(data: TaskCreate) -> TaskRead`: genera UUID4, timestamps UTC iguales.  
@@ -196,12 +196,12 @@ requiere que la anterior esté en verde).
 
 > Objetivo: router conectado a la app; el smoke test L-1 pasa en verde.
 
-- [ ] **4.1 — RED: smoke test del router (L-1 ya escrito en 0.6)**  
+- [x] **4.1 — RED: smoke test del router (L-1 ya escrito en 0.6)**  
   El test `test_get_tasks_returns_empty_list` del paso 0.6 sigue en RED.  
   Confirmar que el fallo es porque el router no está montado (404 o similar),  
   no un ImportError (las fases anteriores ya resuelven los imports).
 
-- [ ] **4.2 — GREEN: implementar `app/routers/tasks.py` (esqueleto + GET /api/tasks)**  
+- [x] **4.2 — GREEN: implementar `app/routers/tasks.py` (esqueleto + GET /api/tasks)**  
   Crear `APIRouter(prefix="/tasks", tags=["tasks"])`.  
   Implementar solo:  
   ```python
@@ -221,9 +221,9 @@ requiere que la anterior esté en verde).
 > Cada tarea es una unidad TDD independiente. Los tests de escenarios anteriores  
 > NO se rompen al añadir nuevos endpoints.
 
-- [ ] **5.1 — POST `/api/tasks` (crear tarea)**  
+- [x] **5.1 — POST `/api/tasks` (crear tarea)**  
 
-  - [ ] **5.1.1 — RED: tests de POST**  
+  - [x] **5.1.1 — RED: tests de POST**  
     - `POST /api/tasks {"title": "T"}` → 201, body `TaskRead` completo con defaults.  
     - `POST /api/tasks {"title": "T", "description": "D", "status": "in_progress", "priority": "high"}` → 201, body refleja campos.  
     - `created_at == updated_at` en la respuesta de creación.  
@@ -236,7 +236,7 @@ requiere que la anterior esté en verde).
     Ejecutar: 404 (endpoint no existe) o errores de validación inesperados. Confirmar RED.  
     Spec: **R-CREATE-01..08**, escenarios **C-1, C-2, C-3, C-4, C-5, C-6, C-7, C-8**.
 
-  - [ ] **5.1.2 — GREEN: implementar handler `POST /api/tasks`**  
+  - [x] **5.1.2 — GREEN: implementar handler `POST /api/tasks`**  
     ```python
     @router.post("", status_code=201, response_model=TaskRead)
     def create_task(data: TaskCreate, service: TaskService = Depends(get_task_service)) -> TaskRead:
@@ -244,7 +244,7 @@ requiere que la anterior esté en verde).
     ```  
     Ejecutar pytest: todos los tests de 5.1.1 deben pasar.
 
-  - [ ] **5.1.3 — RED adicional: L-2 y L-3 (tarea creada aparece en el listado)**  
+  - [x] **5.1.3 — RED adicional: L-2 y L-3 (tarea creada aparece en el listado)**  
     - `POST` + `GET /api/tasks` → array con la tarea creada (mismo id, title, status, priority).  
     Ejecutar: puede pasar inmediatamente si el GET ya funciona. Si pasa, confirmar que el  
     test es válido (no un falso positivo).  
