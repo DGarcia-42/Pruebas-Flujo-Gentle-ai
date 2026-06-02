@@ -250,9 +250,9 @@ requiere que la anterior esté en verde).
     test es válido (no un falso positivo).  
     Spec: escenarios **L-2, L-3**, **R-LIST-04**.
 
-- [ ] **5.2 — GET `/api/tasks/{id}` (obtener tarea por id)**  
+- [x] **5.2 — GET `/api/tasks/{id}` (obtener tarea por id)**  
 
-  - [ ] **5.2.1 — RED: tests de GET por id**  
+  - [x] **5.2.1 — RED: tests de GET por id**  
     - `POST` para crear tarea con id `X`; `GET /api/tasks/X` → 200, body `TaskRead` con `id=X`.  
     - `id` en la URL coincide con `id` en el body.  
     - `title` y `priority` en el body coinciden con los del POST.  
@@ -260,7 +260,7 @@ requiere que la anterior esté en verde).
     Ejecutar: 404 (endpoint no existe). Confirmar RED.  
     Spec: **R-GET-01, R-GET-02, R-GET-03**, **R-ERR-01**, escenarios **G-1, G-2, G-3**.
 
-  - [ ] **5.2.2 — GREEN: implementar handler `GET /api/tasks/{task_id}`**  
+  - [x] **5.2.2 — GREEN: implementar handler `GET /api/tasks/{task_id}`**  
     ```python
     @router.get("/{task_id}", response_model=TaskRead)
     def get_task(task_id: str, service: TaskService = Depends(get_task_service)) -> TaskRead:
@@ -269,9 +269,9 @@ requiere que la anterior esté en verde).
     El exception handler global en `main.py` convierte `TaskNotFoundError` → 404.  
     Ejecutar pytest: tests de 5.2.1 deben pasar.
 
-- [ ] **5.3 — PUT `/api/tasks/{id}` (actualización parcial)**  
+- [x] **5.3 — PUT `/api/tasks/{id}` (actualización parcial)**  
 
-  - [ ] **5.3.1 — RED: tests de PUT**  
+  - [x] **5.3.1 — RED: tests de PUT**  
     - `POST` + `PUT /api/tasks/{id} {"title": "Actualizado"}` → 200, `title="Actualizado"`, `status` sin cambio.  
     - `PUT` con `{"status": "done", "priority": "high"}` → 200, `status` y `priority` actualizados, campos no incluidos intactos.  
     - `PUT` con `{}` → 200, todos los campos de datos conservados, `updated_at >= created_at`.  
@@ -284,7 +284,7 @@ requiere que la anterior esté en verde).
     Ejecutar: 404 o 405 (endpoint no existe). Confirmar RED.  
     Spec: **R-UPDATE-01..09**, **R-MOD-05, R-MOD-06**, escenarios **U-1, U-2, U-3, U-4, U-5, U-6, U-7, U-8**.
 
-  - [ ] **5.3.2 — GREEN: implementar handler `PUT /api/tasks/{task_id}`**  
+  - [x] **5.3.2 — GREEN: implementar handler `PUT /api/tasks/{task_id}`**  
     ```python
     @router.put("/{task_id}", response_model=TaskRead)
     def update_task(task_id: str, data: TaskUpdate, service: TaskService = Depends(get_task_service)) -> TaskRead:
@@ -293,9 +293,9 @@ requiere que la anterior esté en verde).
     El servicio aplica `data.model_dump(exclude_unset=True)` + refresca `updated_at`.  
     Ejecutar pytest: tests de 5.3.1 deben pasar.
 
-- [ ] **5.4 — DELETE `/api/tasks/{id}` (eliminar tarea)**  
+- [x] **5.4 — DELETE `/api/tasks/{id}` (eliminar tarea)**  
 
-  - [ ] **5.4.1 — RED: tests de DELETE**  
+  - [x] **5.4.1 — RED: tests de DELETE**  
     - `POST` + `DELETE /api/tasks/{id}` → 204, cuerpo vacío.  
     - `DELETE /api/tasks/{uuid_inexistente}` → 404.  
     - `POST` + `DELETE` + `GET /api/tasks/{id}` → 404 (D-4).  
@@ -304,7 +304,7 @@ requiere que la anterior esté en verde).
     Ejecutar: 404 o 405 (endpoint no existe). Confirmar RED.  
     Spec: **R-DELETE-01..05**, escenarios **D-1, D-2, D-3, D-4, D-5**.
 
-  - [ ] **5.4.2 — GREEN: implementar handler `DELETE /api/tasks/{task_id}`**  
+  - [x] **5.4.2 — GREEN: implementar handler `DELETE /api/tasks/{task_id}`**  
     ```python
     @router.delete("/{task_id}", status_code=204)
     def delete_task(task_id: str, service: TaskService = Depends(get_task_service)) -> None:
@@ -319,29 +319,29 @@ requiere que la anterior esté en verde).
 > Objetivo: suite completa en verde, cobertura de los 33 requisitos y 27 escenarios,  
 > type hints completos, cero warnings de pytest.
 
-- [ ] **6.1 — Ejecutar suite completa y confirmar 0 fallos**  
+- [x] **6.1 — Ejecutar suite completa y confirmar 0 fallos**  
   ```bash
   cd backend && pytest -v
   ```  
   Todos los tests deben pasar. Si alguno falla, aplicar RED-GREEN antes de continuar.
 
-- [ ] **6.2 — Verificar cobertura de escenarios**  
+- [x] **6.2 — Verificar cobertura de escenarios**  
   Comprobar manualmente que cada escenario de la spec (L-1..L-3, C-1..C-8, G-1..G-3,  
   U-1..U-8, D-1..D-5) tiene al menos un test que lo cubre directamente.  
   Añadir tests para cualquier escenario sin cobertura.
 
-- [ ] **6.3 — Revisar type hints y checklist de diseño**  
+- [x] **6.3 — Revisar type hints y checklist de diseño**  
   Verificar el checklist de `design.md`:  
-  - [ ] Router solo depende de `TaskService` vía `Depends`.  
-  - [ ] Servicio no importa nada de `fastapi` salvo el provider; no usa `HTTPException`.  
-  - [ ] Repositorio devuelve `None` ante ausencia.  
-  - [ ] `TaskNotFoundError` en `exceptions.py`, mapeado en `main.py`.  
-  - [ ] Timestamps UTC, `created_at` inmutable en update.  
-  - [ ] `TaskUpdate` con `exclude_unset=True`.  
-  - [ ] Cero dependencias fuera de fastapi/uvicorn/pydantic + pytest/httpx.  
-  - [ ] Type hints en todas las firmas públicas.
+  - [x] Router solo depende de `TaskService` vía `Depends`.  
+  - [x] Servicio no importa nada de `fastapi` salvo el provider; no usa `HTTPException`.  
+  - [x] Repositorio devuelve `None` ante ausencia.  
+  - [x] `TaskNotFoundError` en `exceptions.py`, mapeado en `main.py`.  
+  - [x] Timestamps UTC, `created_at` inmutable en update.  
+  - [x] `TaskUpdate` con `exclude_unset=True`.  
+  - [x] Cero dependencias fuera de fastapi/uvicorn/pydantic + pytest/httpx.  
+  - [x] Type hints en todas las firmas públicas.
 
-- [ ] **6.4 — Refactor (si aplica)**  
+- [x] **6.4 — Refactor (si aplica)**  
   Con todos los tests en verde: eliminar duplicación, mejorar nombres, extraer helpers.  
   No añadir comportamiento. Volver a ejecutar pytest tras cada cambio de refactor.
 
