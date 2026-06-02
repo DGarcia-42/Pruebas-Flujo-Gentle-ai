@@ -49,7 +49,10 @@ class TaskService:
         # created_at es inmutable: nunca incluir en changes
 
         updated = self._repo.update(task_id, changes)
-        assert updated is not None  # repo.update devuelve None solo si no existe
+        if updated is None:  # invariante: la tarea existe (comprobado arriba)
+            raise RuntimeError(
+                f"Inconsistencia interna: la tarea {task_id} desapareció durante la actualización"
+            )
         return updated
 
     def delete(self, task_id: str) -> None:
