@@ -115,7 +115,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-07 — `api/client.ts` — Task interface + helpers
 
-- [ ] In `frontend/src/api/client.ts`, add:
+- [x] In `frontend/src/api/client.ts`, add:
   - `interface Task { id: string; title: string; description: string|null; status: 'pending'|'in_progress'|'done'; priority: 'low'|'medium'|'high'; due_date: string|null; created_at: string; updated_at: string }`
   - `interface TaskCreateRequest { title: string; description?: string; due_date?: string }`
   - `export function listTasks(): Promise<Task[]|null>` → `apiFetch<Task[]>('GET', '/api/tasks')`
@@ -125,7 +125,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-08 — RED: `e2e/tasks.spec.ts` — E2E-07, E2E-08, E2E-09 (failing)
 
-- [ ] Create `e2e/tasks.spec.ts` with:
+- [x] Create `e2e/tasks.spec.ts` with:
   - `registerAndLogin` reuse helper from `e2e/auth.spec.ts` or inline an `authAndNavigateToTasks()` helper
   - `createTaskViaApi(request, data)` helper using `page.request.post('/api/tasks', {data})` — no auth needed
   - `E2E-07`: navigate to tasks view (`nav-tasks`), fill `task-title`/`task-description`/`task-due-date` (today or future), submit, assert task appears with all three fields
@@ -137,7 +137,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-09 — `TaskCreateForm.tsx` — controlled form component
 
-- [ ] Create `frontend/src/components/TaskCreateForm.tsx`:
+- [x] Create `frontend/src/components/TaskCreateForm.tsx`:
   - Controlled inputs: `data-testid="task-title"` (required), `data-testid="task-description"` (textarea, optional), `data-testid="task-due-date"` (date input, optional)
   - Submit button `data-testid="task-submit"`
   - On submit: call `createTask(...)`, call `onTaskCreated()` prop on success, clear fields
@@ -147,7 +147,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-10 — `TaskList.tsx` — presentational list with overdue badge
 
-- [ ] Create `frontend/src/components/TaskList.tsx`:
+- [x] Create `frontend/src/components/TaskList.tsx`:
   - Props: `tasks: Task[]`
   - Renders each task in `.task-list` / `.task-item`
   - Shows `title` always; shows `description` when not null; shows `due_date` (via `toLocaleDateString()`) when not null
@@ -158,7 +158,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-11 — `TasksView.tsx` — container
 
-- [ ] Create `frontend/src/components/TasksView.tsx`:
+- [x] Create `frontend/src/components/TasksView.tsx`:
   - Fetches `listTasks()` on mount (useEffect) and stores in `tasks` state
   - Re-fetches after `TaskCreateForm` calls `onTaskCreated()`
   - Renders `<TaskCreateForm onTaskCreated={refresh} />` and `<TaskList tasks={tasks} />`
@@ -169,7 +169,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 > Check git status before editing. If file has unsaved/staged changes from another session, coordinate first.
 
-- [ ] In `frontend/src/index.css`, append:
+- [x] In `frontend/src/index.css`, append:
   - `.task-list` — vertical list layout
   - `.task-item` — card/row with border-only depth (matches existing design system)
   - `.task-item__meta` — muted secondary text for date/description
@@ -181,7 +181,7 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 > Check git status before editing. If file has unsaved/staged changes from another session, coordinate first.
 
-- [ ] In `frontend/src/App.tsx`:
+- [x] In `frontend/src/App.tsx`:
   - Add `'tasks'` to the `View` union type
   - Import `TasksView`
   - In the authenticated area, add `<button data-testid="nav-tasks" onClick={() => setView('tasks')}>Tasks</button>` to the topbar
@@ -191,9 +191,9 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-14 — GREEN: verify E2E suite and build
 
-- [ ] Run `npx playwright test e2e/tasks.spec.ts` from repo root — all 3 tests must pass.
-- [ ] Run `npm run build` from `frontend/` — exit 0, zero TypeScript errors.
-- [ ] Fix any failures before considering PR2 done.
+- [x] Run `npx playwright test e2e/tasks.spec.ts` from repo root — all 3 tests must pass.
+- [x] Run `npm run build` from `frontend/` — exit 0, zero TypeScript errors.
+- [x] Fix any failures before considering PR2 done.
 - Commit: _(verification gate — no separate commit unless a bug fix is needed)_
 
 **PR2 commit story** (ordered, each self-contained):
