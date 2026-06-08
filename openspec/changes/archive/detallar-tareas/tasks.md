@@ -111,8 +111,6 @@ All five commits land on `sdd/detallar-tareas-backend`. PR1 targets `feature/det
 
 Strict TDD: E2E tests are written first (RED — failing), then components are implemented (GREEN).
 
-> COORDINATION LOCK WARNING: `frontend/src/App.tsx` and `frontend/src/index.css` may be under an active edit lock from another Quorum session. Before editing either file, run `git status` and verify no staged/unstaged changes exist. New files (`TasksView.tsx`, `TaskCreateForm.tsx`, `TaskList.tsx`, `e2e/tasks.spec.ts`) are unaffected and can be written immediately.
-
 ### T-07 — `api/client.ts` — Task interface + helpers
 
 - [x] In `frontend/src/api/client.ts`, add:
@@ -167,8 +165,6 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 
 ### T-12 — `index.css` — task CSS tokens
 
-> Check git status before editing. If file has unsaved/staged changes from another session, coordinate first.
-
 - [x] In `frontend/src/index.css`, append:
   - `.task-list` — vertical list layout
   - `.task-item` — card/row with border-only depth (matches existing design system)
@@ -178,8 +174,6 @@ Strict TDD: E2E tests are written first (RED — failing), then components are i
 - Spec: R-UI-04 (visual overdue indicator)
 
 ### T-13 — `App.tsx` — wire `'tasks'` view + nav
-
-> Check git status before editing. If file has unsaved/staged changes from another session, coordinate first.
 
 - [x] In `frontend/src/App.tsx`:
   - Add `'tasks'` to the `View` union type
@@ -216,9 +210,3 @@ All seven commits land on `sdd/detallar-tareas-ui`. PR2 targets `sdd/detallar-ta
 | PR1 — Backend | T-01..T-06 (5 commits) | domain model, TaskCreate 422, TaskUpdate no-restriction, TaskRead all responses |
 | PR2 — Frontend | T-07..T-14 (7 commits) | R-UI-01..R-UI-05, E2E-07/08/09 |
 | Total | 14 tasks | All spec requirements |
-
-## Parallelism Notes
-
-Within PR1: T-01→T-02 (sequential RED→GREEN), T-03→T-04 (sequential RED→GREEN), T-05 can be written after T-02 is done (schemas exist). T-06 is a gate, not a commit.
-
-Within PR2: T-07 (client.ts) is independent and can be written first. T-08 (E2E RED) must come before T-09–T-13 (GREEN). T-09, T-10, T-11 are independent of each other once T-07 is done. T-12 (CSS) and T-13 (App.tsx) must check git status before editing (coordination lock risk).

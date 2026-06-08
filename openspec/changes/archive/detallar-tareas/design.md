@@ -50,8 +50,8 @@ Two chained slices map to the proposal. **PR1 (backend)**: add an optional `due_
 | `frontend/src/components/TasksView.tsx` | Create | Container: fetch on mount + after create |
 | `frontend/src/components/TaskCreateForm.tsx` | Create | Controlled form, `data-testid` on all fields |
 | `frontend/src/components/TaskList.tsx` | Create | Presentational, overdue badge |
-| `frontend/src/App.tsx` | Modify | `'tasks'` in `View` union + nav buttons (LOCKED — see Risks) |
-| `frontend/src/index.css` | Modify | `.task-list`/`.task-item`/`.task-item__meta`/`.badge-overdue` (LOCKED — see Risks) |
+| `frontend/src/App.tsx` | Modify | `'tasks'` in `View` union + nav buttons |
+| `frontend/src/index.css` | Modify | `.task-list`/`.task-item`/`.task-item__meta`/`.badge-overdue` |
 | `e2e/tasks.spec.ts` | Create | E2E-07/08/09 + `createTaskViaApi` helper |
 
 ## Interfaces / Contracts
@@ -105,4 +105,4 @@ No migration required. In-memory repo is wiped on restart; `due_date` is additiv
 
 ## Open Questions
 
-- [ ] **App.tsx / index.css Quorum lock**: both files are under an active coordination lock from another session. PR2 apply MUST sequence its edits to these two files AFTER the lock clears, or coordinate to avoid "modified since last read" conflicts. The new component files and `client.ts`/`e2e` are unaffected and can proceed independently.
+- [x] **App.tsx / index.css Quorum lock**: resolved — lock cleared before PR2 apply; no conflicts encountered.
