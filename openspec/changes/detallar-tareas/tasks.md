@@ -42,7 +42,7 @@ Strict TDD: every behavior gets a RED (failing test) commit before its GREEN (im
 
 ### T-01 — RED: `test_schemas.py` — `due_date` validation unit tests
 
-- [ ] In `backend/tests/test_schemas.py`, add tests for `TaskCreate` validator (patch `app.schemas.task.date`):
+- [x] In `backend/tests/test_schemas.py`, add tests for `TaskCreate` validator (patch `app.schemas.task.date`):
   - `test_due_date_past_raises`: `due_date = yesterday` → `ValidationError`
   - `test_due_date_today_valid`: `due_date = today` → no error
   - `test_due_date_future_valid`: `due_date = tomorrow` → no error
@@ -53,7 +53,7 @@ Strict TDD: every behavior gets a RED (failing test) commit before its GREEN (im
 
 ### T-02 — GREEN: `schemas/task.py` — add `due_date` to all three schemas + `@field_validator`
 
-- [ ] In `backend/app/schemas/task.py`:
+- [x] In `backend/app/schemas/task.py`:
   - Add `from datetime import date` (keep existing `datetime` import)
   - Add `due_date: date | None = None` to `TaskCreate`, `TaskUpdate`, `TaskRead`
   - Add `@field_validator('due_date') @classmethod due_date_not_in_past` on `TaskCreate` only → `raise ValueError('due_date must not be in the past')` when `v is not None and v < date.today()`
@@ -62,7 +62,7 @@ Strict TDD: every behavior gets a RED (failing test) commit before its GREEN (im
 
 ### T-03 — RED: `test_service.py` — service passthrough
 
-- [ ] In `backend/tests/test_service.py`, add:
+- [x] In `backend/tests/test_service.py`, add:
   - `test_create_task_passes_due_date_through`: `TaskService.create(TaskCreate(title="T", due_date=tomorrow))` → returned `TaskRead.due_date == tomorrow`
   - `test_create_task_due_date_none_by_default`: `TaskService.create(TaskCreate(title="T"))` → `due_date is None`
 - Commit: `test(tasks): RED — service passthrough tests for due_date`
@@ -70,14 +70,14 @@ Strict TDD: every behavior gets a RED (failing test) commit before its GREEN (im
 
 ### T-04 — GREEN: `services/task_service.py` — pass `due_date` through `create()`
 
-- [ ] In `backend/app/services/task_service.py`, update `create()` to pass `due_date=data.due_date` into the `TaskRead(...)` constructor (if not already using `**data.model_dump()` which would absorb it automatically).
-- [ ] Verify `update()` path: `model_dump(exclude_unset=True)` + `model_copy(update=...)` already absorbs `due_date` transparently — confirm with a quick read, no change needed if so.
+- [x] In `backend/app/services/task_service.py`, update `create()` to pass `due_date=data.due_date` into the `TaskRead(...)` constructor (if not already using `**data.model_dump()` which would absorb it automatically).
+- [x] Verify `update()` path: `model_dump(exclude_unset=True)` + `model_copy(update=...)` already absorbs `due_date` transparently — confirm with a quick read, no change needed if so.
 - Commit: `feat(tasks): wire due_date through TaskService.create()`
 - Spec: service passthrough
 
 ### T-05 — RED: `test_tasks_api.py` — integration tests
 
-- [ ] In `backend/tests/test_tasks_api.py`, add:
+- [x] In `backend/tests/test_tasks_api.py`, add:
   - `test_create_task_with_due_date_201`: POST with `due_date=tomorrow_str` → 201, response `due_date == tomorrow_str`
   - `test_create_task_past_due_date_422`: POST with `due_date=yesterday_str` → 422
   - `test_create_task_without_due_date_null`: POST `{"title":"T"}` → 201, `due_date is None`
@@ -91,8 +91,8 @@ Strict TDD: every behavior gets a RED (failing test) commit before its GREEN (im
 
 ### T-06 — GREEN: verify all `backend/` tests pass
 
-- [ ] Run `pytest` from `backend/` — all tests must pass (0 failures).
-- [ ] Fix any unexpected failures before committing.
+- [x] Run `pytest` from `backend/` — all tests must pass (0 failures). Result: 123 passed.
+- [x] Fix any unexpected failures before committing.
 - Commit: _(no separate commit — T-02 and T-04 are the GREEN commits; this is a verification gate)_
 - Spec: full suite gate before PR1 is ready
 
