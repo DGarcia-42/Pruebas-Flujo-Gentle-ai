@@ -412,6 +412,20 @@ def test_me_all_401_paths_return_same_detail(client):
     assert r1.json()["detail"] == r2.json()["detail"] == r3.json()["detail"]
 
 
+# RS-03.2 / W-01 — Orphan token (token exists in repo but mapped user_id does not) → 401
+def test_rs03_orphan_token_user_id_returns_401(client_with_repo):
+    client, repo = client_with_repo
+    # Manufacture orphan state: insert a token that maps to a user_id with no
+    # corresponding user record in users_by_id.
+    orphan_token = "orphan-token-that-has-no-user"
+    repo.save_token(orphan_token, "nonexistent-user-id-42")
+    # Confirm setup: the token is present but its user_id resolves to None
+    assert repo.get_by_token(orphan_token) is None
+    response = client.get(ME_URL, headers={"Authorization": f"Bearer {orphan_token}"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Credenciales inválidas"
+
+
 # =============================================================================
 # T-08 — PUT /api/auth/me/password endpoint — PASS-01..09
 # =============================================================================
