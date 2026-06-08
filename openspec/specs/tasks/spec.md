@@ -13,15 +13,16 @@ Los escenarios usan la sintaxis **Given / When / Then**.
 
 ### 1.1 Campos y tipos
 
-| Campo        | Tipo JSON               | Requerido en creacion | Valor por defecto      |
-|--------------|-------------------------|-----------------------|------------------------|
-| `id`         | `string` (UUID4)        | No - generado         | UUID4 nuevo            |
-| `title`      | `string`                | **Si** (min 1 char)   | -                      |
-| `description`| `string` o `null`       | No                    | `null`                 |
-| `status`     | `string` (enum)         | No                    | `"pending"`            |
-| `priority`   | `string` (enum)         | No                    | `"medium"`             |
-| `created_at` | `string` (ISO 8601 UTC) | No - generado         | instante de creacion   |
-| `updated_at` | `string` (ISO 8601 UTC) | No - generado         | instante de creacion; se actualiza en cada modificacion |
+| Campo        | Tipo JSON                                         | Requerido en creacion | Valor por defecto      |
+|--------------|---------------------------------------------------|-----------------------|------------------------|
+| `id`         | `string` (UUID4)                                  | No - generado         | UUID4 nuevo            |
+| `title`      | `string`                                          | **Si** (min 1 char)   | -                      |
+| `description`| `string` o `null`                                 | No                    | `null`                 |
+| `status`     | `string` (enum)                                   | No                    | `"pending"`            |
+| `priority`   | `string` (enum)                                   | No                    | `"medium"`             |
+| `due_date`   | `string` (ISO 8601 date `"YYYY-MM-DD"`) o `null`  | No                    | `null`                 |
+| `created_at` | `string` (ISO 8601 UTC)                           | No - generado         | instante de creacion   |
+| `updated_at` | `string` (ISO 8601 UTC)                           | No - generado         | instante de creacion; se actualiza en cada modificacion |
 
 ### 1.2 Valores de enum `status`
 
@@ -47,6 +48,8 @@ Los escenarios usan la sintaxis **Given / When / Then**.
   actualizarse al instante de cada modificación exitosa. Si ningún campo cambia en
   un `PUT`, `updated_at` MUST actualizarse igualmente.
 - **R-MOD-07** - El sistema MUST aceptar y devolver fechas en formato ISO 8601 UTC.
+- **R-MOD-08** - `due_date` MUST ser `null` por defecto cuando no se proporciona en creación.
+  El valor, cuando presente, MUST representarse como string ISO 8601 `"YYYY-MM-DD"`.
 
 ---
 
@@ -58,17 +61,22 @@ Los escenarios usan la sintaxis **Given / When / Then**.
 - `description` - string o null, opcional, por defecto `null`.
 - `status` - enum `TaskStatus`, opcional, por defecto `"pending"`.
 - `priority` - enum `TaskPriority`, opcional, por defecto `"medium"`.
+- `due_date` - string ISO 8601 (`"YYYY-MM-DD"`) o null, opcional, por defecto `null`.
+  MUST rechazar con `422` cualquier fecha anterior a la fecha actual del servidor.
+  Una fecha igual a hoy MUST ser aceptada.
 
 ### 2.2 `TaskUpdate` (cuerpo de `PUT`)
 
-- Todos los campos (`title`, `description`, `status`, `priority`) son **opcionales**.
+- Todos los campos (`title`, `description`, `status`, `priority`, `due_date`) son **opcionales**.
 - Un `PUT` con cuerpo vacío `{}` es válido; MUST producir `200` y actualizar
   únicamente `updated_at`.
 - Si `title` está presente MUST ser no vacío; si es `""` MUST producir `422`.
+- `due_date` en actualización NO tiene restricción de fecha pasada — cualquier fecha válida
+  o `null` MUST aceptarse.
 
 ### 2.3 `TaskRead` (respuesta de todos los endpoints que devuelven una tarea)
 
-Todos los campos del modelo: `id`, `title`, `description`, `status`, `priority`,
+Todos los campos del modelo: `id`, `title`, `description`, `status`, `priority`, `due_date`,
 `created_at`, `updated_at`.
 
 ---
@@ -85,6 +93,8 @@ Todos los campos del modelo: `id`, `title`, `description`, `status`, `priority`,
 - **R-LIST-03** - El endpoint MUST devolver TODAS las tareas existentes sin filtrado,
   paginación ni ordenación en v1.
 - **R-LIST-04** - Cada elemento del array MUST cumplir el schema `TaskRead` completo.
+- **R-LIST-05** - Cada elemento del array MUST incluir el campo `due_date` (valor ISO date
+  string o `null`).
 
 **Escenarios**
 
@@ -100,12 +110,17 @@ Escenario L-2: Con tareas existentes
   Cuando se hace GET /api/tasks
   Entonces la respuesta es 200 OK
   Y el cuerpo es un array con N elementos
-  Y cada elemento tiene todos los campos de TaskRead
+  Y cada elemento tiene todos los campos de TaskRead (incluido due_date)
 
 Escenario L-3: La tarea recién creada aparece en el listado
   Dado que se crea una tarea con POST /api/tasks
   Cuando se hace GET /api/tasks
-  Entonces la respuesta contiene la tarea creada (mismo id, title, status, priority)
+  Entonces la respuesta contiene la tarea creada (mismo id, title, status, priority, due_date)
+
+Escenario L-4: Listar tareas — cada elemento incluye due_date
+  Dado que existen tareas creadas con y sin due_date
+  Cuando se hace GET /api/tasks
+  Entonces cada elemento del array incluye el campo due_date (valor ISO date string o null)
 ```
 
 ---
@@ -116,7 +131,8 @@ Escenario L-3: La tarea recién creada aparece en el listado
 
 - **R-CREATE-01** - El endpoint MUST responder `201 Created` al crear una tarea válida.
 - **R-CREATE-02** - El cuerpo de la respuesta MUST ser un objeto `TaskRead` con todos
-  los campos, incluidos `id`, `created_at` y `updated_at` generados por el servidor.
+  los campos, incluidos `id`, `created_at`, `updated_at` y `due_date` generados/aplicados
+  por el servidor.
 - **R-CREATE-03** - Si `title` está ausente, es `null` o es string vacío, el endpoint
   MUST responder `422 Unprocessable Entity`.
 - **R-CREATE-04** - Si `status` tiene un valor fuera del enum, el endpoint MUST
@@ -124,11 +140,17 @@ Escenario L-3: La tarea recién creada aparece en el listado
 - **R-CREATE-05** - Si `priority` tiene un valor fuera del enum, el endpoint MUST
   responder `422`.
 - **R-CREATE-06** - Los campos omitidos MUST tomar sus valores por defecto:
-  `description -> null`, `status -> "pending"`, `priority -> "medium"`.
+  `description -> null`, `status -> "pending"`, `priority -> "medium"`, `due_date -> null`.
 - **R-CREATE-07** - Cada tarea creada MUST recibir un `id` único (UUID4); dos llamadas
   sucesivas MUST generar IDs distintos.
 - **R-CREATE-08** - `created_at` y `updated_at` MUST ser iguales (mismo instante) en
   la respuesta de creación.
+- **R-CREATE-09** - Si `due_date` es una fecha anterior a la fecha actual del servidor,
+  el endpoint MUST responder `422 Unprocessable Entity`.
+- **R-CREATE-10** - Si `due_date` es la fecha actual o posterior, el endpoint MUST
+  aceptarla y devolverla en la respuesta con `201 Created`.
+- **R-CREATE-11** - Un body `{"title": "T"}` sin campo `due_date` MUST producir `201 Created`
+  con `due_date: null` en la respuesta (compatibilidad con payloads legacy).
 
 **Escenarios**
 
@@ -138,14 +160,14 @@ Escenario C-1: Crear tarea con solo título (happy path mínimo)
   Cuando se hace POST /api/tasks
   Entonces la respuesta es 201 Created
   Y el body contiene id (UUID4), title="Mi primera tarea",
-    description=null, status="pending", priority="medium",
+    description=null, status="pending", priority="medium", due_date=null,
     created_at y updated_at (iguales entre sí)
 
 Escenario C-2: Crear tarea con todos los campos
   Dado un body {"title": "T", "description": "Desc", "status": "in_progress", "priority": "high"}
   Cuando se hace POST /api/tasks
   Entonces la respuesta es 201 Created
-  Y el body refleja exactamente los valores enviados (más id, created_at, updated_at)
+  Y el body refleja exactamente los valores enviados (más id, created_at, updated_at, due_date=null)
 
 Escenario C-3: title ausente -> 422
   Dado un body {} (sin title)
@@ -176,6 +198,36 @@ Escenario C-8: Dos creaciones generan IDs distintos
   Dado dos llamadas POST /api/tasks con body {"title": "T"}
   Cuando se procesan ambas peticiones
   Entonces los dos id devueltos son distintos entre sí
+
+Escenario C-9: Crear con due_date hoy — válido
+  Dado un body {"title": "T", "due_date": "<hoy>"} (fecha de hoy en ISO 8601)
+  Cuando se hace POST /api/tasks
+  Entonces la respuesta es 201 Created
+  Y el campo due_date en la respuesta coincide con la fecha enviada
+
+Escenario C-10: Crear con due_date futuro — válido
+  Dado un body {"title": "T", "due_date": "<mañana o posterior>"}
+  Cuando se hace POST /api/tasks
+  Entonces la respuesta es 201 Created
+  Y el campo due_date en la respuesta coincide con la fecha enviada
+
+Escenario C-11: Crear con due_date en el pasado — 422
+  Dado un body {"title": "T", "due_date": "<ayer o anterior>"}
+  Cuando se hace POST /api/tasks
+  Entonces la respuesta es 422 Unprocessable Entity
+
+Escenario C-12: Crear con due_date null explícito — válido
+  Dado un body {"title": "T", "due_date": null}
+  Cuando se hace POST /api/tasks
+  Entonces la respuesta es 201 Created
+  Y el campo due_date en la respuesta es null
+
+Escenario C-13: Compatibilidad con payloads legacy
+  Dado un body {"title": "T"} (sin mención a due_date)
+  Cuando se hace POST /api/tasks
+  Entonces la respuesta es 201 Created
+  Y el campo due_date es null
+  Y todos los demás campos siguen con sus valores por defecto habituales
 ```
 
 ---
@@ -198,7 +250,7 @@ Escenario G-1: id existente -> 200 con la tarea (happy path)
   Dado que existe una tarea con id=X creada previamente
   Cuando se hace GET /api/tasks/X
   Entonces la respuesta es 200 OK
-  Y el body es un objeto TaskRead con id=X y los campos correctos
+  Y el body es un objeto TaskRead con id=X y los campos correctos (incluido due_date)
 
 Escenario G-2: id inexistente -> 404
   Dado un UUID válido que no corresponde a ninguna tarea
@@ -234,6 +286,12 @@ Escenario G-3: Datos íntegros - lo que se creó es lo que se obtiene
 - **R-UPDATE-08** - `created_at` MUST permanecer inmutable tras el `PUT`.
 - **R-UPDATE-09** - `id` MUST permanecer inmutable; si el body incluye un campo `id`,
   MUST ser ignorado o rechazado con 422.
+- **R-UPDATE-10** - `due_date` MUST aceptarse en actualización sin restricción de fecha
+  pasada. Un `due_date` con fecha anterior a hoy es válido en `PUT`.
+- **R-UPDATE-11** - Si `due_date` está presente y es `null`, MUST limpiar la fecha
+  de vencimiento de la tarea.
+- **R-UPDATE-12** - Si `due_date` está ausente del body, el valor existente MUST
+  conservarse sin cambios.
 
 **Escenarios**
 
@@ -257,7 +315,7 @@ Escenario U-3: Body vacío {} - solo updated_at cambia
   Dado una tarea existente
   Cuando se hace PUT /api/tasks/{id} con body {}
   Entonces la respuesta es 200 OK
-  Y todos los campos (title, description, status, priority) conservan su valor
+  Y todos los campos (title, description, status, priority, due_date) conservan su valor
   Y updated_at es mayor o igual al updated_at previo
 
 Escenario U-4: id inexistente -> 404
@@ -284,6 +342,24 @@ Escenario U-8: created_at inmutable
   Dado una tarea existente con created_at=T0
   Cuando se hace PUT /api/tasks/{id} con cualquier body válido
   Entonces el campo created_at en la respuesta es igual a T0
+
+Escenario U-9: Actualizar due_date con fecha pasada — válido en UPDATE
+  Dado una tarea existente
+  Cuando se hace PUT /api/tasks/{id} con body {"due_date": "<ayer>"}
+  Entonces la respuesta es 200 OK
+  Y el campo due_date en la respuesta coincide con la fecha enviada
+
+Escenario U-10: Actualizar due_date a null — limpia la fecha
+  Dado una tarea existente con due_date no nulo
+  Cuando se hace PUT /api/tasks/{id} con body {"due_date": null}
+  Entonces la respuesta es 200 OK
+  Y el campo due_date en la respuesta es null
+
+Escenario U-11: PUT sin due_date — fecha previa conservada
+  Dado una tarea existente con due_date no nulo
+  Cuando se hace PUT /api/tasks/{id} con body que omite due_date
+  Entonces la respuesta es 200 OK
+  Y el campo due_date conserva el valor previo
 ```
 
 ---
@@ -365,6 +441,7 @@ Los siguientes comportamientos están **fuera de spec** y no deben validarse:
 - Persistencia en base de datos; el store es in-memory.
 - Seguridad ante concurrencia (thread-safety).
 - Endpoint `PATCH`.
+- `due_date` validation on UPDATE (no restriction on past dates in update).
 
 ---
 
@@ -372,13 +449,13 @@ Los siguientes comportamientos están **fuera de spec** y no deben validarse:
 
 | Endpoint                  | Requisitos | Escenarios | Códigos cubiertos |
 |---------------------------|-----------|------------|-------------------|
-| `GET /api/tasks`          | 4         | 3          | 200               |
-| `POST /api/tasks`         | 8         | 8          | 201, 422          |
+| `GET /api/tasks`          | 5         | 4          | 200               |
+| `POST /api/tasks`         | 11        | 13         | 201, 422          |
 | `GET /api/tasks/{id}`     | 3         | 3          | 200, 404          |
-| `PUT /api/tasks/{id}`     | 9         | 8          | 200, 404, 422     |
+| `PUT /api/tasks/{id}`     | 12        | 11         | 200, 404, 422     |
 | `DELETE /api/tasks/{id}`  | 5         | 5          | 204, 404          |
 | Transversales             | 4         | -          | -                 |
-| **TOTAL**                 | **33**    | **27**     |                   |
+| **TOTAL**                 | **40**    | **36**     |                   |
 
 ---
 
@@ -394,3 +471,7 @@ Estas decisiones vienen de la fase de propuesta y son contratos cerrados para es
 | `status` por defecto      | `"pending"` en creación                                    |
 | `priority` por defecto    | `"medium"` en creación                                     |
 | `GET /api/tasks` v1       | Lista plana sin filtros, paginación ni orden               |
+| `due_date`                | Opcional, por defecto `null`; validación de fecha pasada   |
+|                           | SOLO en creación (POST); UPDATE no tiene restricción       |
+| Validador `due_date`      | `@field_validator` en `TaskCreate` solamente; `ValueError` |
+|                           | → 422. Fecha igual a hoy aceptada; solo pasado rechazado   |

@@ -12,9 +12,11 @@ interface UserProfile {
 interface Props {
   /** Called when the user wants to log out (token cleared by caller). */
   onLogout: () => void;
+  /** Called when the user navigates to the tasks view. */
+  onGoToTasks?: () => void;
 }
 
-export function Profile({ onLogout }: Props) {
+export function Profile({ onLogout, onGoToTasks }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -68,6 +70,16 @@ export function Profile({ onLogout }: Props) {
     <div className="app-shell">
       <header className="app-topbar">
         <span className="app-topbar__title">Profile</span>
+        {onGoToTasks && (
+          <button
+            type="button"
+            className="topbar-action"
+            data-testid="nav-tasks"
+            onClick={onGoToTasks}
+          >
+            Tasks
+          </button>
+        )}
         <button
           type="button"
           className="topbar-action"

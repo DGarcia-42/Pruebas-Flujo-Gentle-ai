@@ -23,6 +23,7 @@ class TaskService:
             description=data.description,
             status=data.status,
             priority=data.priority,
+            due_date=data.due_date,
             created_at=now,
             updated_at=now,
         )

@@ -1,9 +1,9 @@
 """
 Tests unitarios del servicio de tareas.
-Cubre: R-MOD-05, R-MOD-06, R-CREATE-07, R-CREATE-08, ADR-4, ADR-5, ADR-6.
+Cubre: R-MOD-05, R-MOD-06, R-CREATE-07, R-CREATE-08, ADR-4, ADR-5, ADR-6, due_date passthrough.
 """
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -115,6 +115,21 @@ class TestTaskServiceUpdate:
         """update(uuid_inexistente) → TaskNotFoundError."""
         with pytest.raises(TaskNotFoundError):
             service.update(str(uuid.uuid4()), TaskUpdate(title="X"))
+
+
+class TestTaskServiceDueDate:
+    """Service passthrough tests for due_date (RED-first for T-03)."""
+
+    def test_create_passes_due_date_through(self, service: TaskService) -> None:
+        """create with due_date=tomorrow → TaskRead.due_date == tomorrow."""
+        tomorrow = date.today() + timedelta(days=1)
+        result = service.create(TaskCreate(title="T", due_date=tomorrow))
+        assert result.due_date == tomorrow
+
+    def test_create_due_date_none_by_default(self, service: TaskService) -> None:
+        """create without due_date → due_date is None."""
+        result = service.create(TaskCreate(title="T"))
+        assert result.due_date is None
 
 
 class TestTaskServiceDelete:
