@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.dependencies import get_auth_service
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic
+from app.dependencies import get_auth_service, get_current_user
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic, UserRecord
 from app.services.auth_service import AuthService
 from app.services.exceptions import EmailAlreadyExists, InvalidCredentials
 
@@ -27,6 +27,15 @@ def register(
             status_code=status.HTTP_409_CONFLICT,
             detail="El email ya está registrado",
         )
+
+
+@router.get("/me", response_model=UserPublic, status_code=status.HTTP_200_OK)
+def get_me(
+    current_user: UserRecord = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+) -> UserPublic:
+    """Returns the public profile of the authenticated user."""
+    return service.get_me(current_user)
 
 
 @router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)

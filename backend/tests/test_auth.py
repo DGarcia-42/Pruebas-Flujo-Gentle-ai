@@ -343,3 +343,70 @@ def test_change_password_old_password_no_longer_valid_after_change():
     service = _AuthService(repo)
     service.change_password(user, "oldpass12", "newpass99")
     assert not _verify_password("oldpass12", user.hashed_password)
+
+
+# =============================================================================
+# T-07 — GET /api/auth/me endpoint — ME-01..05
+# =============================================================================
+
+ME_URL = "/api/auth/me"
+
+ME_USER = {
+    "email": "perfil@ejemplo.com",
+    "password": "segura1234",
+    "username": "PerfUser",
+}
+
+
+def _register_and_login(client, user_data=None):
+    """Helper: register a user and return (user_id, access_token)."""
+    data = user_data or ME_USER
+    reg = client.post(REGISTER_URL, json=data)
+    user_id = reg.json()["id"]
+    login_resp = client.post(
+        LOGIN_URL, json={"email": data["email"], "password": data["password"]}
+    )
+    token = login_resp.json()["access_token"]
+    return user_id, token
+
+
+# ME-01 — Valid token returns UserPublic
+def test_me_valid_token_returns_user_public(client):
+    user_id, token = _register_and_login(client)
+    response = client.get(ME_URL, headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == user_id
+    assert body["email"] == ME_USER["email"]
+    assert body["username"] == ME_USER["username"]
+    assert "password" not in body
+    assert "hashed_password" not in body
+
+
+# ME-02 — Missing Authorization header → 401
+def test_me_missing_auth_header_returns_401(client):
+    response = client.get(ME_URL)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Credenciales inválidas"
+
+
+# ME-03 — Malformed Authorization header → 401
+def test_me_malformed_auth_header_returns_401(client):
+    response = client.get(ME_URL, headers={"Authorization": "Token abc123"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Credenciales inválidas"
+
+
+# ME-04 — Unknown token → 401
+def test_me_unknown_token_returns_401(client):
+    response = client.get(ME_URL, headers={"Authorization": "Bearer not-a-real-token"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Credenciales inválidas"
+
+
+# ME-05 — Anti-enumeration: all three 401 paths return same body
+def test_me_all_401_paths_return_same_detail(client):
+    r1 = client.get(ME_URL)
+    r2 = client.get(ME_URL, headers={"Authorization": "Token abc123"})
+    r3 = client.get(ME_URL, headers={"Authorization": "Bearer not-a-real-token"})
+    assert r1.json()["detail"] == r2.json()["detail"] == r3.json()["detail"]
