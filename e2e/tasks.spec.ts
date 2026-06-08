@@ -85,16 +85,15 @@ test('E2E-07: create task with all fields appears in list with due date shown', 
   await page.getByTestId('task-due-date').fill(dueDate);
   await page.getByTestId('task-submit').click();
 
-  // The task must appear in the list
-  await expect(page.getByText(title)).toBeVisible({ timeout: 8_000 });
+  // The task item must appear in the list — locate by task-item containing this title
+  const taskItem = page.locator('[data-testid="task-item"]').filter({ hasText: title });
+  await expect(taskItem).toBeVisible({ timeout: 8_000 });
 
-  // Description must be shown
-  await expect(page.getByText(description)).toBeVisible({ timeout: 8_000 });
+  // Description must be shown within this task item
+  await expect(taskItem.locator('text=' + description)).toBeVisible({ timeout: 8_000 });
 
-  // Due date must be shown (rendered via toLocaleDateString — not exact ISO)
-  // Assert at least one due-date element is present for a task with a date
-  const dueDateElements = page.locator('[data-testid="task-due-date-display"]');
-  await expect(dueDateElements.first()).toBeVisible({ timeout: 8_000 });
+  // Due date must be shown within this task item (rendered via toLocaleDateString)
+  await expect(taskItem.locator('[data-testid="task-due-date-display"]')).toBeVisible({ timeout: 8_000 });
 });
 
 // ---------------------------------------------------------------------------
