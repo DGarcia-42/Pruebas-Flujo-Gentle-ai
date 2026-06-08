@@ -18,3 +18,12 @@ class UserRepository:
 
     def save_token(self, token: str, user_id: str) -> None:
         self.tokens[token] = user_id
+
+    def get_by_token(self, token: str) -> UserRecord | None:
+        user_id = self.tokens.get(token)
+        if user_id is None:
+            return None
+        return self.users_by_id.get(user_id)
+
+    def get_by_id(self, user_id: str) -> UserRecord | None:
+        return self.users_by_id.get(user_id)

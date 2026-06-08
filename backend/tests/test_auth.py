@@ -159,3 +159,51 @@ def test_login_token_is_stored_in_repo(client_with_repo):
 def test_login_missing_field(client):
     response = client.post(LOGIN_URL, json={"email": VALID_USER["email"]})
     assert response.status_code == 422
+
+
+# =============================================================================
+# T-01 — Repository accessors: get_by_token + get_by_id
+# =============================================================================
+
+from app.repositories.user_repository import UserRepository as _UserRepository
+from app.schemas.auth import UserRecord as _UserRecord
+
+
+def _make_user(suffix: str = "") -> _UserRecord:
+    return _UserRecord(
+        id=f"uid{suffix}",
+        email=f"user{suffix}@example.com",
+        username=f"User{suffix}",
+        hashed_password="hashed",
+    )
+
+
+def test_get_by_token_returns_user_when_token_exists():
+    repo = _UserRepository()
+    user = _make_user("1")
+    repo.add(user)
+    repo.save_token("tok1", user.id)
+    result = repo.get_by_token("tok1")
+    assert result is not None
+    assert result.id == user.id
+
+
+def test_get_by_token_returns_none_for_unknown_token():
+    repo = _UserRepository()
+    result = repo.get_by_token("nope")
+    assert result is None
+
+
+def test_get_by_id_returns_user_when_id_exists():
+    repo = _UserRepository()
+    user = _make_user("2")
+    repo.add(user)
+    result = repo.get_by_id(user.id)
+    assert result is not None
+    assert result.email == user.email
+
+
+def test_get_by_id_returns_none_for_unknown_id():
+    repo = _UserRepository()
+    result = repo.get_by_id("does-not-exist")
+    assert result is None
