@@ -95,6 +95,7 @@ export function RegisterForm({ onSuccess }: Props) {
 
           <button
             type="submit"
+            data-testid="register-submit"
             className="btn-primary"
             disabled={loading}
           >

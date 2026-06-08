@@ -198,7 +198,7 @@ body {
   color: var(--color-brand-hover);
 }
 
-/* Authenticated area (placeholder — Profile screen is PR3) */
+/* Authenticated area shell */
 .app-shell {
   min-height: 100dvh;
   display: flex;
@@ -213,12 +213,32 @@ body {
   height: 52px;
   display: flex;
   align-items: center;
+  gap: var(--space-4);
 }
 
 .app-topbar__title {
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--color-ink-primary);
+  flex: 1;
+}
+
+/* Sign-out / topbar action link-style button */
+.topbar-action {
+  background: none;
+  border: none;
+  color: var(--color-ink-secondary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.topbar-action:hover {
+  color: var(--color-ink-primary);
+  background: var(--color-control-bg);
 }
 
 .app-content {
@@ -229,7 +249,44 @@ body {
   width: 100%;
 }
 
-.app-content p {
-  color: var(--color-ink-secondary);
+/* Profile data card */
+.profile-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.profile-card__heading {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-5);
+}
+
+/* Profile field definition list */
+.profile-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.profile-field__label {
   font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-ink-secondary);
+  letter-spacing: 0.01em;
+}
+
+.profile-field__value {
+  font-size: var(--font-size-base);
+  color: var(--color-ink-primary);
+  font-weight: 400;
 }

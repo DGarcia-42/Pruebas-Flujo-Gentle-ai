@@ -82,6 +82,7 @@ export function LoginForm({ onSuccess, onGoToRegister }: Props) {
 
           <button
             type="submit"
+            data-testid="login-submit"
             className="btn-primary"
             disabled={loading}
           >

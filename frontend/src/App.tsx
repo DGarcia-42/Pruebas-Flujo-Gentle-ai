@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { getToken } from './auth/storage';
+import { getToken, clearToken } from './auth/storage';
 import { RegisterForm } from './components/RegisterForm';
 import { LoginForm } from './components/LoginForm';
+import { Profile } from './components/Profile';
 
 /**
  * Possible application views.
@@ -9,14 +10,10 @@ import { LoginForm } from './components/LoginForm';
  * - "register": unauthenticated, showing the registration form
  * - "login":    unauthenticated, showing the login form
  * - "app":      authenticated (token is present in storage)
- *
- * PR3 will replace the "app" branch with the real Profile screen.
  */
 type View = 'register' | 'login' | 'app';
 
 function resolveInitialView(): View {
-  // If a token is already in memory (e.g., from a same-session navigation),
-  // start directly in the authenticated area.
   return getToken() ? 'app' : 'login';
 }
 
@@ -40,17 +37,14 @@ function App() {
     );
   }
 
-  // "app" view — authenticated area placeholder.
-  // The real Profile screen (GET /api/auth/me) will be wired in PR3.
+  // "app" view — authenticated area with Profile + ChangePasswordForm.
   return (
-    <div className="app-shell">
-      <header className="app-topbar">
-        <span className="app-topbar__title">Perfil Usuario</span>
-      </header>
-      <main className="app-content" data-testid="authenticated-area">
-        <p>Logged in. Profile screen coming in PR3.</p>
-      </main>
-    </div>
+    <Profile
+      onLogout={() => {
+        clearToken();
+        setView('login');
+      }}
+    />
   );
 }
 
