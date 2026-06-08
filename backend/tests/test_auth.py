@@ -289,3 +289,57 @@ def test_get_me_does_not_expose_password():
     result_dict = result.model_dump()
     assert "hashed_password" not in result_dict
     assert "password" not in result_dict
+
+
+# =============================================================================
+# T-06 — AuthService.change_password
+# =============================================================================
+
+from app.security.passwords import hash_password as _hash_password, verify_password as _verify_password
+from app.services.exceptions import InvalidCurrentPassword
+
+
+def _make_user_with_real_hash(suffix: str, password: str) -> _UserRecord:
+    return _UserRecord(
+        id=f"uid_cp{suffix}",
+        email=f"cp{suffix}@example.com",
+        username=f"CpUser{suffix}",
+        hashed_password=_hash_password(password),
+    )
+
+
+def test_change_password_succeeds_with_correct_current():
+    repo = _UserRepository()
+    user = _make_user_with_real_hash("1", "oldpass12")
+    repo.add(user)
+    service = _AuthService(repo)
+    service.change_password(user, "oldpass12", "newpass99")
+    assert _verify_password("newpass99", user.hashed_password)
+
+
+def test_change_password_mutates_hash_in_place():
+    repo = _UserRepository()
+    user = _make_user_with_real_hash("2", "oldpass12")
+    repo.add(user)
+    old_hash = user.hashed_password
+    service = _AuthService(repo)
+    service.change_password(user, "oldpass12", "newpass99")
+    assert user.hashed_password != old_hash
+
+
+def test_change_password_raises_on_wrong_current():
+    repo = _UserRepository()
+    user = _make_user_with_real_hash("3", "oldpass12")
+    repo.add(user)
+    service = _AuthService(repo)
+    with pytest.raises(InvalidCurrentPassword):
+        service.change_password(user, "wrongpassword", "newpass99")
+
+
+def test_change_password_old_password_no_longer_valid_after_change():
+    repo = _UserRepository()
+    user = _make_user_with_real_hash("4", "oldpass12")
+    repo.add(user)
+    service = _AuthService(repo)
+    service.change_password(user, "oldpass12", "newpass99")
+    assert not _verify_password("oldpass12", user.hashed_password)
