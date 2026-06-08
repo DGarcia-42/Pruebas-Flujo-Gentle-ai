@@ -410,3 +410,127 @@ def test_me_all_401_paths_return_same_detail(client):
     r2 = client.get(ME_URL, headers={"Authorization": "Token abc123"})
     r3 = client.get(ME_URL, headers={"Authorization": "Bearer not-a-real-token"})
     assert r1.json()["detail"] == r2.json()["detail"] == r3.json()["detail"]
+
+
+# =============================================================================
+# T-08 — PUT /api/auth/me/password endpoint — PASS-01..09
+# =============================================================================
+
+CHANGE_PW_URL = "/api/auth/me/password"
+
+PASS_USER = {
+    "email": "passchange@ejemplo.com",
+    "password": "segura1234",
+    "username": "PassUser",
+}
+
+
+# PASS-01 — Valid token + correct current password → 204
+def test_pass01_valid_token_correct_current_password_returns_204(client):
+    _, token = _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+# PASS-02 — Stored hash changes after successful change
+def test_pass02_stored_hash_changes_after_successful_change(client_with_repo):
+    client, repo = client_with_repo
+    _, token = _register_and_login(client, PASS_USER)
+    old_hash = repo.get_by_email(PASS_USER["email"]).hashed_password
+    client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    new_hash = repo.get_by_email(PASS_USER["email"]).hashed_password
+    assert new_hash != old_hash
+
+
+# PASS-03 — Login with new password succeeds after change
+def test_pass03_login_with_new_password_succeeds_after_change(client):
+    _, token = _register_and_login(client, PASS_USER)
+    client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    login_resp = client.post(
+        LOGIN_URL, json={"email": PASS_USER["email"], "password": "nuevaClave99"}
+    )
+    assert login_resp.status_code == 200
+
+
+# PASS-04 — Login with old password fails after change
+def test_pass04_login_with_old_password_fails_after_change(client):
+    _, token = _register_and_login(client, PASS_USER)
+    client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    login_resp = client.post(
+        LOGIN_URL, json={"email": PASS_USER["email"], "password": "segura1234"}
+    )
+    assert login_resp.status_code == 401
+    assert login_resp.json()["detail"] == "Credenciales inválidas"
+
+
+# PASS-05 — Wrong current password → 400 (design decision #4: 400 + precise message)
+def test_pass05_wrong_current_password_returns_400(client):
+    _, token = _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "wrongpassword", "new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "La contraseña actual es incorrecta"
+
+
+# PASS-06 — Missing token → 401
+def test_pass06_missing_token_returns_401(client):
+    _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "nuevaClave99"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Credenciales inválidas"
+
+
+# PASS-07 — Missing current_password field → 422
+def test_pass07_missing_current_password_returns_422(client):
+    _, token = _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"new_password": "nuevaClave99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422
+
+
+# PASS-08 — Missing new_password field → 422
+def test_pass08_missing_new_password_returns_422(client):
+    _, token = _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422
+
+
+# PASS-09 — new_password too short → 422
+def test_pass09_new_password_too_short_returns_422(client):
+    _, token = _register_and_login(client, PASS_USER)
+    response = client.put(
+        CHANGE_PW_URL,
+        json={"current_password": "segura1234", "new_password": "short"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422

@@ -1,13 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_auth_service, get_current_user
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic, UserRecord
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserPublic,
+    UserRecord,
+)
 from app.services.auth_service import AuthService
-from app.services.exceptions import EmailAlreadyExists, InvalidCredentials
+from app.services.exceptions import EmailAlreadyExists, InvalidCredentials, InvalidCurrentPassword
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 _INVALID_CREDENTIALS_DETAIL = "Credenciales inválidas"
+
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    body: ChangePasswordRequest,
+    current_user: UserRecord = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+) -> None:
+    """Changes the authenticated user's password. Returns 204 No Content on success."""
+    try:
+        service.change_password(
+            current_user,
+            body.current_password,
+            body.new_password,
+        )
+    except InvalidCurrentPassword:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta",
+        )
 
 
 @router.post("/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
