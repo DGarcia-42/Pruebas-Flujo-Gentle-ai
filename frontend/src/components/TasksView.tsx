@@ -4,6 +4,11 @@ import type { Task, ApiError } from '../api/client';
 import { TaskCreateForm } from './TaskCreateForm';
 import { TaskList } from './TaskList';
 
+interface Props {
+  /** Called when the user wants to go back to the previous screen. */
+  onBack?: () => void;
+}
+
 /**
  * Container component for the tasks view.
  *
@@ -12,7 +17,7 @@ import { TaskList } from './TaskList';
  * - Passes tasks down to TaskList (presentational).
  * - Passes onTaskCreated callback down to TaskCreateForm.
  */
-export function TasksView() {
+export function TasksView({ onBack }: Props) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -35,6 +40,16 @@ export function TasksView() {
     <div className="app-shell">
       <header className="app-topbar">
         <span className="app-topbar__title">Tasks</span>
+        {onBack && (
+          <button
+            type="button"
+            className="topbar-action"
+            data-testid="nav-back"
+            onClick={onBack}
+          >
+            ← Back
+          </button>
+        )}
       </header>
 
       <main className="app-content">
