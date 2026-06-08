@@ -258,3 +258,34 @@ def test_change_password_request_new_password_too_short_fails():
 def test_change_password_request_new_password_too_long_fails():
     with pytest.raises(Exception):
         ChangePasswordRequest(current_password="oldpass1", new_password="x" * 129)
+
+
+# =============================================================================
+# T-05 — AuthService.get_me
+# =============================================================================
+
+from app.services.auth_service import AuthService as _AuthService
+
+
+def test_get_me_returns_user_public():
+    from app.schemas.auth import UserPublic
+    repo = _UserRepository()
+    user = _make_user("me")
+    repo.add(user)
+    service = _AuthService(repo)
+    result = service.get_me(user)
+    assert isinstance(result, UserPublic)
+    assert result.id == user.id
+    assert result.email == user.email
+    assert result.username == user.username
+
+
+def test_get_me_does_not_expose_password():
+    repo = _UserRepository()
+    user = _make_user("me2")
+    repo.add(user)
+    service = _AuthService(repo)
+    result = service.get_me(user)
+    result_dict = result.model_dump()
+    assert "hashed_password" not in result_dict
+    assert "password" not in result_dict

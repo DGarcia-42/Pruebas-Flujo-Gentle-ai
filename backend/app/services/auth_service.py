@@ -31,6 +31,10 @@ class AuthService:
         self.repo.add(user)
         return UserPublic(id=user.id, email=user.email, username=user.username)
 
+    def get_me(self, user: UserRecord) -> UserPublic:
+        """Returns the public profile for an already-resolved user."""
+        return UserPublic(id=user.id, email=user.email, username=user.username)
+
     def login(self, email: str, password: str) -> str:
         """Autentica un usuario y devuelve un token opaco.
 
