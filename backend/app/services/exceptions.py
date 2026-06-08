@@ -8,3 +8,7 @@ class EmailAlreadyExists(AuthError):
 
 class InvalidCredentials(AuthError):
     """Se lanza cuando las credenciales de login son incorrectas o el email no existe."""
+
+
+class InvalidCurrentPassword(AuthError):
+    """Se lanza cuando la contraseña actual proporcionada no coincide con la almacenada."""

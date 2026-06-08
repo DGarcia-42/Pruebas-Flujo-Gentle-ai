@@ -207,3 +207,54 @@ def test_get_by_id_returns_none_for_unknown_id():
     repo = _UserRepository()
     result = repo.get_by_id("does-not-exist")
     assert result is None
+
+
+# =============================================================================
+# T-02 — InvalidCurrentPassword domain exception
+# =============================================================================
+
+from app.services.exceptions import InvalidCurrentPassword
+
+
+def test_invalid_current_password_is_auth_error():
+    from app.services.exceptions import AuthError
+    exc = InvalidCurrentPassword("wrong")
+    assert isinstance(exc, AuthError)
+
+
+def test_invalid_current_password_can_be_raised_and_caught():
+    raised = False
+    try:
+        raise InvalidCurrentPassword("wrong password")
+    except InvalidCurrentPassword:
+        raised = True
+    assert raised
+
+
+# =============================================================================
+# T-03 — ChangePasswordRequest schema validation
+# =============================================================================
+
+from app.schemas.auth import ChangePasswordRequest
+import pytest
+
+
+def test_change_password_request_valid():
+    req = ChangePasswordRequest(current_password="oldpass1", new_password="newpass12")
+    assert req.current_password == "oldpass1"
+    assert req.new_password == "newpass12"
+
+
+def test_change_password_request_empty_current_password_fails():
+    with pytest.raises(Exception):
+        ChangePasswordRequest(current_password="", new_password="newpass12")
+
+
+def test_change_password_request_new_password_too_short_fails():
+    with pytest.raises(Exception):
+        ChangePasswordRequest(current_password="oldpass1", new_password="short")
+
+
+def test_change_password_request_new_password_too_long_fails():
+    with pytest.raises(Exception):
+        ChangePasswordRequest(current_password="oldpass1", new_password="x" * 129)
