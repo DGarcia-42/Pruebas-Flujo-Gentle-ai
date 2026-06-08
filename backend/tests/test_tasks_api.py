@@ -1,8 +1,10 @@
 """
 Tests de API para el endpoint de tareas.
-Cubre escenarios L-1..L-3, C-1..C-8, G-1..G-3, U-1..U-8, D-1..D-5 de la spec crear-api-tareas.
+Cubre escenarios L-1..L-3, C-1..C-8, G-1..G-3, U-1..U-8, D-1..D-5 de la spec crear-api-tareas,
+y due_date scenarios de detallar-tareas.
 """
 import uuid
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -323,3 +325,91 @@ def test_delete_task_second_delete_returns_404(client: TestClient) -> None:
 
     response = client.delete(f"/api/tasks/{task_id}")
     assert response.status_code == 404
+
+
+# ─── due_date scenarios (detallar-tareas) ─────────────────────────────────────
+
+def test_create_task_with_due_date_201(client: TestClient) -> None:
+    """Create task with valid future due_date → 201, value echoed in response."""
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    response = client.post("/api/tasks", json={"title": "T", "due_date": tomorrow})
+    assert response.status_code == 201
+    body = response.json()
+    assert body["due_date"] == tomorrow
+
+
+def test_create_task_past_due_date_422(client: TestClient) -> None:
+    """Create task with past due_date → 422."""
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    response = client.post("/api/tasks", json={"title": "T", "due_date": yesterday})
+    assert response.status_code == 422
+
+
+def test_create_task_without_due_date_null(client: TestClient) -> None:
+    """Create task without due_date (legacy path) → 201, due_date: null."""
+    response = client.post("/api/tasks", json={"title": "T"})
+    assert response.status_code == 201
+    body = response.json()
+    assert body["due_date"] is None
+
+
+def test_list_tasks_includes_due_date(client: TestClient) -> None:
+    """GET /api/tasks after creating tasks with and without due_date → each item includes due_date."""
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    client.post("/api/tasks", json={"title": "With date", "due_date": tomorrow})
+    client.post("/api/tasks", json={"title": "Without date"})
+
+    response = client.get("/api/tasks")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 2
+    dates = {t["title"]: t["due_date"] for t in tasks}
+    assert dates["With date"] == tomorrow
+    assert dates["Without date"] is None
+
+
+def test_update_task_due_date_past_valid(client: TestClient) -> None:
+    """PUT with past due_date → 200 (no restriction on update)."""
+    create_resp = client.post("/api/tasks", json={"title": "T"})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    response = client.put(f"/api/tasks/{task_id}", json={"due_date": yesterday})
+    assert response.status_code == 200
+    assert response.json()["due_date"] == yesterday
+
+
+def test_update_task_clears_due_date(client: TestClient) -> None:
+    """PUT with due_date=null clears the date → 200, due_date is null."""
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    create_resp = client.post("/api/tasks", json={"title": "T", "due_date": tomorrow})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"due_date": None})
+    assert response.status_code == 200
+    assert response.json()["due_date"] is None
+
+
+def test_update_task_preserves_due_date_when_omitted(client: TestClient) -> None:
+    """PUT body without due_date field → due_date preserved from creation."""
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    create_resp = client.post("/api/tasks", json={"title": "T", "due_date": tomorrow})
+    assert create_resp.status_code == 201
+    task_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/tasks/{task_id}", json={"title": "Updated"})
+    assert response.status_code == 200
+    assert response.json()["due_date"] == tomorrow
+
+
+def test_legacy_payload_still_works(client: TestClient) -> None:
+    """Legacy {title} payload (no due_date) → 201, due_date null, other fields at defaults."""
+    response = client.post("/api/tasks", json={"title": "Legacy"})
+    assert response.status_code == 201
+    body = response.json()
+    assert body["due_date"] is None
+    assert body["status"] == "pending"
+    assert body["priority"] == "medium"
+    assert body["description"] is None
