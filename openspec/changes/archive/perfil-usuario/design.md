@@ -128,49 +128,22 @@ then — out of scope now.)
 
 ---
 
-## 3. Service methods  (DECISION: `get_me(token)` + `change_password(token, current, new)`)
+## 3. Service methods  (DECISION: `get_me(user)` + `change_password(user, current, new)`)
 
 ```python
 # backend/app/services/auth_service.py  (additions)
-from app.services.exceptions import InvalidCredentials  # reused, see section 4
-
-def get_me(self, token: str) -> UserPublic:
-    user = self.repo.get_by_token(token)
-    if user is None:
-        raise InvalidCredentials()
+def get_me(self, user: UserRecord) -> UserPublic:
     return UserPublic(id=user.id, email=user.email, username=user.username)
 
-def change_password(self, token: str, current_password: str, new_password: str) -> None:
-    user = self.repo.get_by_token(token)
-    if user is None:
-        raise InvalidCredentials()
+def change_password(self, user: UserRecord, current_password: str, new_password: str) -> None:
     if not verify_password(current_password, user.hashed_password):
-        raise InvalidCredentials()
+        raise InvalidCurrentPassword()
     user.hashed_password = hash_password(new_password)
-    return None
 ```
 
-**Design note on the seam — the dependency already resolves the user, so why does the
-service re-resolve from the token?** Two valid shapes:
-
-- (a) Router uses `get_current_user` to get the `UserRecord`, then calls
-  `service.change_password(user, current, new)` passing the record.
-- (b) Service takes the `token` and re-resolves (shown above).
-
-**Chosen: (a) for the router wiring, but the service signature takes the resolved
-`UserRecord`, not the token.** Re-resolving by token in the service (option b) is a wasted
-second lookup and splits auth logic across two layers. Final signatures:
-
-```python
-def get_me(self, user: UserRecord) -> UserPublic: ...
-def change_password(self, user: UserRecord, current_password: str, new_password: str) -> None: ...
-```
-
-The router obtains `user` from `get_current_user` (which already did the 401 work) and the
-service focuses purely on domain logic (verify current, rehash). This keeps the 401
-("who are you") concern in the dependency and the 400/validation ("is your current password
-right") concern in the service. `get_me` becomes a trivial mapper; `change_password` verifies
-and mutates.
+**Design note on the seam:** the dependency already resolves the user, so the service
+takes the resolved `UserRecord` (not the token), allowing the router to do the identity
+work and the service to focus on domain logic.
 
 Router wiring:
 
@@ -208,8 +181,7 @@ class InvalidCurrentPassword(AuthError):
     """Se lanza cuando la contraseña actual aportada en el cambio no coincide."""
 ```
 
-`change_password` raises `InvalidCurrentPassword` when `verify_password` fails (not
-`InvalidCredentials`).
+`change_password` raises `InvalidCurrentPassword` when `verify_password` fails.
 
 **Why not reuse `InvalidCredentials`:** the two cases need *different* HTTP semantics and
 the anti-enumeration argument does not apply here.
@@ -416,7 +388,7 @@ e2e/
 // e2e/playwright.config.ts
 export default defineConfig({
   testDir: "./tests",
-  use: { baseURL: "http://127.0.0.1:5173" },   // Vite dev server
+  use: { baseURL: "http://127.0.0.1:5173" },   # Vite dev server
   webServer: [
     {
       command: "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
